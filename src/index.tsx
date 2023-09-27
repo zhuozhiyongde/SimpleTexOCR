@@ -1,4 +1,4 @@
-import { environment, closeMainWindow, getPreferenceValues, Clipboard, showHUD } from "@raycast/api";
+import { environment, closeMainWindow, getPreferenceValues, Clipboard, showHUD, LocalStorage } from "@raycast/api";
 import { join } from "path";
 import { execSync } from "child_process";
 import axios from "axios";
@@ -6,6 +6,7 @@ import FormData from "form-data";
 import fs from "fs";
 
 export default async () => {
+  console.log(await LocalStorage.getItem<string>("format"));
   await closeMainWindow();
   const savePath = join(environment.supportPath, "capture.png");
 
@@ -25,12 +26,27 @@ export default async () => {
   };
   try {
     const res = await axios.post("https://server.simpletex.cn/api/latex_ocr", formData, { headers });
-    console.log(res);
+    // console.log(res);
     const data = res.data;
     if (!data.status) {
       throw new Error("API 报错");
     }
-    await Clipboard.copy(data.res.latex);
+    const fomart = (await LocalStorage.getItem<string>("format")) ?? "raw";
+    switch (fomart) {
+      case "raw":
+        await Clipboard.copy(data.res.latex);
+        break;
+      case "inline":
+        await Clipboard.copy(`$${data.res.latex}$`);
+        break;
+      case "block":
+        await Clipboard.copy(`$$\n${data.res.latex}\n$$`);
+        break;
+      default:
+        await Clipboard.copy(data.res.latex);
+        break;
+    }
+
     await showHUD("✅ OCR 成功");
     fs.unlinkSync(savePath);
   } catch (err) {
