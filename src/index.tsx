@@ -13,7 +13,7 @@ export default async () => {
   execSync(`/usr/sbin/screencapture -i '${savePath}'`);
   // 检查文件是否存在
   if (!fs.existsSync(savePath)) {
-    await showHUD("❌ 截图失败");
+    await showHUD("❌ Screenshot failed");
     return;
   }
   const token = getPreferenceValues().token;
@@ -29,7 +29,7 @@ export default async () => {
     // console.log(res);
     const data = res.data;
     if (!data.status) {
-      throw new Error("API 报错");
+      throw new Error("API Response Error");
     }
     const fomart = (await LocalStorage.getItem<string>("format")) ?? "raw";
     switch (fomart) {
@@ -47,25 +47,25 @@ export default async () => {
         break;
     }
 
-    await showHUD("✅ OCR 成功");
+    await showHUD("✅ OCR Success");
     fs.unlinkSync(savePath);
   } catch (err) {
     if (axios.isAxiosError(err) && err.response) {
       const err_dict: { [key: number]: string } = {
-        401: "鉴权失败",
-        402: "没有可以用以调用接口的资源，如无资源包或账户余额不足",
-        404: "找不到对应的API或对应的版本",
-        405: "错误的请求方法",
-        413: "图片文件过大",
-        429: "超出最大调用的并发请求量，请稍后再试",
-        500: "没有文件导致的服务器错误",
-        503: "服务器未启动/维护中",
+        401: "Failed to authenticate",
+        402: "No resources available to call the interface, such… resource package or insufficient account balance",
+        404: "couldn't find the corresponding API or corresponding version",
+        405: "Error request method",
+        413: "The image file is too large",
+        429: "The maximum number of concurrent requests exceeded, please try again later",
+        500: "Server error due to no file",
+        503: "Server not started/under maintenance",
       };
       const status_code: number = err.response.status;
-      const err_msg = err_dict[status_code] || "未知错误";
-      await showHUD("❌ 请求 API 失败：" + err_msg);
+      const err_msg = err_dict[status_code] || "Unknown error";
+      await showHUD("❌ Request API Failed: " + err_msg);
     } else {
-      await showHUD("❌ 请求 API 失败");
+      await showHUD("❌ Request API Failed");
     }
     fs.unlinkSync(savePath);
     return;
